@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import "@fontsource-variable/plus-jakarta-sans";
 import "./globals.css";
 import "./product.css";
+import "./import.css";
 
 export const metadata: Metadata = {
   title: "Fiscaliza · São Paulo",
@@ -25,6 +27,8 @@ export default function RootLayout({
     </html>
   );
 }
+
+
 
 
 

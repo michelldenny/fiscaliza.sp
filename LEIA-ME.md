@@ -28,6 +28,20 @@ Se o atalho npm falhar no Windows, execute o npm diretamente com `node "C:/Progr
 
 ## Funcionalidades
 
+### Importação de planilhas
+
+No **Painel** ou em **Demandas**, clique em **Importar planilha**. Aceita `.xlsx` e `.csv`, até 5 MB e 200 linhas por lote, com cabeçalhos na primeira linha. Arquivos `.xls` devem ser salvos como `.xlsx` antes de importar. Em Excel, escolha a aba; em CSV, ponto e vírgula, vírgula ou tabulação são detectados automaticamente.
+
+Associe as colunas aos campos do sistema. Você pode preencher postura, fiscal e data padrão para as células vazias. Postura, número da demanda, endereço, data da última vistoria e fiscal são obrigatórios. A postura precisa existir e ter o prazo validado nas configurações. Prioridade vazia recebe **Média**, e status vazio recebe **Em acompanhamento**.
+
+A prévia mostra todas as linhas, os retornos calculados e as pendências. Somente as linhas válidas são importadas após clicar em **Importar demandas**. Números de demanda repetidos ou já cadastrados são rejeitados; registros anteriores não são atualizados. É possível baixar um CSV das pendências para corrigir e importar depois. Se houver conflito ou falha no servidor, o lote inteiro fica sem gravação.
+
+Use datas `DD/MM/AAAA` ou `AAAA-MM-DD`, ou células de data do Excel. Formate SQL, SEI e números de demanda como texto para preservar zeros à esquerda. Fórmulas devem ser substituídas por valores. Colunas de prazo e retorno não são importadas: o sistema recalcula com a regra configurada da postura. O arquivo é lido no navegador; somente os campos selecionados das linhas confirmadas seguem ao servidor. Cada cadastro guarda arquivo, aba, linha e lote na auditoria. O botão **Baixar modelo CSV** oferece os cabeçalhos esperados.
+
+A tipografia é **Plus Jakarta Sans**, incluída na própria aplicação por meio do pacote Fontsource, sem dependência de requisições ao Google Fonts.
+
+### Demais recursos
+
 - Painel com retornos atrasados, de hoje, em atenção, no prazo, alta prioridade e total ativo. Os cartões abrem a lista filtrada.
 - Cadastro, consulta, edição e exclusão lógica de demandas; número da demanda único entre registros não excluídos.
 - Busca por endereço, SQL, demanda, SEI, fiscal, postura e observações. Filtros por postura, prazo, prioridade, status, fiscal e intervalo de retorno.
