@@ -1,5 +1,6 @@
 import vinext from "vinext";
 import { defineConfig } from "vite";
+import { resolve } from "node:path";
 import hostingConfig from "./.openai/hosting.json";
 import { readExecutionProfile } from "./scripts/execution-profile.mjs";
 import { sites } from "./build/sites-vite-plugin";
@@ -36,6 +37,20 @@ const localBindingConfig = {
 };
 
 export default defineConfig(async () => {
+  const vercelBuild = process.env.VERCEL === "1" || process.env.NITRO_PRESET === "vercel";
+  if (vercelBuild) {
+    const { nitro } = await import("nitro/vite");
+    const { default: tailwindcss } = await import("@tailwindcss/vite");
+    return {
+      resolve: {
+        alias: {
+          "cloudflare:workers": resolve("build/vercel-cloudflare-workers.ts"),
+        },
+      },
+      plugins: [tailwindcss(), vinext(), nitro({ preset: "vercel" })],
+    };
+  }
+
   // Use Miniflare's local Request.cf placeholder unless fetching is requested.
   process.env.CLOUDFLARE_CF_FETCH_ENABLED ??= "false";
   process.env.WRANGLER_SEND_METRICS ??= "false";

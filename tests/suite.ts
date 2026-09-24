@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import ExcelJS from 'exceljs';
 import { parseCSV,parseDate,autoMapping,cellText,rowHasContent,validateImport,MAX_IMPORT } from '../lib/import-data';
 import { readSpreadsheet } from '../lib/read-spreadsheet';
+import { readWorkspace,updateWorkspace } from '../lib/workspace-store';
 import { GET,POST } from '../app/api/workspace/route';
 import { dueDate,initialData,situation,today,addDays,validDate } from '../lib/domain';
 let passed=0;
@@ -65,4 +66,10 @@ const xlsx=await wb.xlsx.writeBuffer();const parsed=await readSpreadsheet(new Fi
 ok(parsed[0].name==='Demandas'&&parsed[0].rows[1][1]==='00023'&&parsed[0].rows[1][2]==='2026-09-20','Excel real: aba, identificadores formatados e datas');
 const csvParsed=await readSpreadsheet(new File(['Demanda;Endereço\n001;Rua Teste'],'teste.csv'));
 ok(csvParsed[0].rows[1][0]==='001','Leitura de arquivo CSV real');
+const originalFetch=globalThis.fetch,redisCommands:unknown[][]=[];let redisValue='';
+process.env.UPSTASH_REDIS_REST_URL='https://redis.test';process.env.UPSTASH_REDIS_REST_TOKEN='token';
+globalThis.fetch=async(_input,init)=>{const command=JSON.parse(String(init?.body)) as unknown[];redisCommands.push(command);let value:unknown=null;if(command[0]==='SETNX'){if(!redisValue){redisValue=String(command[2]);value=1;}else value=0;}else if(command[0]==='GET')value=redisValue;else if(command[0]==='EVAL'){const current=JSON.parse(redisValue) as {version:number};if(current.version===command[4]){redisValue=String(command[5]);value=1;}else value=0;}return Response.json({result:value});};
+const redisRow=await readWorkspace();const redisUpdated=await updateWorkspace(redisRow.payload,redisRow.version);
+ok(redisRow.version===0&&redisUpdated&&JSON.parse(redisValue).version===1&&redisCommands.some(c=>c[0]==='EVAL'),'Persistência Redis usa inicialização e atualização atômicas');
+globalThis.fetch=originalFetch;delete process.env.UPSTASH_REDIS_REST_URL;delete process.env.UPSTASH_REDIS_REST_TOKEN;
 console.log(`\n${passed} verificações passaram.`);

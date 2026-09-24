@@ -1,16 +1,14 @@
-import { env } from 'cloudflare:workers';
 import { MAX_IMPORT,validateImport } from '@/lib/import-data';
-import { initialData, statuses, priorities, validDate, dueDate, today, lastVisit, type Data, type Rule, type Action } from '@/lib/domain';
+import { statuses, priorities, validDate, dueDate, today, lastVisit, type Data, type Rule, type Action } from '@/lib/domain';
+import { readWorkspace,updateWorkspace } from '@/lib/workspace-store';
 export const dynamic='force-dynamic';
 const respond=(x:unknown,status=200)=>Response.json(x,{status,headers:{'Cache-Control':'no-store'}});
-function database(){if(!env.DB)throw new Error('Banco de dados indisponível.');return env.DB;}
-async function read(){const db=database();await db.prepare('INSERT OR IGNORE INTO workspace (id,payload,version) VALUES (?,?,0)').bind('fiscaliza',JSON.stringify(initialData())).run();return await db.prepare('SELECT payload,version FROM workspace WHERE id=?').bind('fiscaliza').first<{payload:string;version:number}>();}
-export async function GET(req:Request){try{const row=(await read())!;const user=req.headers.get('oai-authenticated-user-id')||'local';return respond({...JSON.parse(row.payload),version:row.version,user});}catch(e){console.error(e);return respond({error:'Não foi possível carregar os dados. Verifique o banco e tente novamente.'},503);}}
+export async function GET(req:Request){try{const row=await readWorkspace();const user=req.headers.get('oai-authenticated-user-id')||'local';return respond({...JSON.parse(row.payload),version:row.version,user});}catch(e){console.error(e);return respond({error:e instanceof Error?e.message:'Não foi possível carregar os dados. Verifique o banco e tente novamente.'},503);}}
 function check(ok:unknown,message:string):asserts ok {if(!ok)throw new Error(message);}
 function str(x:unknown,max=2000){check(typeof x==='string'&&x.length<=max,'Texto inválido ou muito longo.');return x.trim();}
 export async function POST(req:Request){try{
  const origin=req.headers.get('origin');check(!origin||origin===new URL(req.url).origin,'Origem inválida.');
- const body:any=await req.json();const row=(await read())!;if(body.version!==row.version)return respond({error:'Os dados foram alterados em outra janela. Atualize a página antes de salvar; copie seu texto para preservá-lo.'},409);
+ const body:any=await req.json();const row=await readWorkspace();if(body.version!==row.version)return respond({error:'Os dados foram alterados em outra janela. Atualize a página antes de salvar; copie seu texto para preservá-lo.'},409);
  const data:Data=JSON.parse(row.payload),p=body.payload||{};const actor=req.headers.get('oai-authenticated-user-email')||'Operador local';const user=req.headers.get('oai-authenticated-user-id')||'local';const at=new Date().toISOString();let before:unknown=null,after:unknown=null,entity='configuracoes',type='';
  const ruleFor=(id:string)=>{const r=data.rules.find(r=>r.id===id);check(r&&r.active&&r.configured,'Configure e ative a postura antes de utilizá-la.');return r;};
  const makeVisit=(r:Rule,date:string,note:string,inspector:string)=>{check(validDate(date)&&date<=today(),'A data da vistoria deve ser válida e não pode ser futura.');return {id:crypto.randomUUID(),date,note:str(note,8000),inspector:str(inspector,120),due:dueDate(date,r,data.holidays),rule:{...r},holidays:[...data.holidays]};};
@@ -35,7 +33,7 @@ export async function POST(req:Request){try{
  }else return respond({error:'Operação desconhecida.'},400);
  if(type)data.audit.unshift({id:crypto.randomUUID(),at,actor,entity,type,before,after:structuredClone(after)});
  if(body.op==='import')check(new TextEncoder().encode(JSON.stringify(data)).length<1900000,'Este lote excede a capacidade atual da área de trabalho. Nenhuma linha foi salva.');
- const result=await database().prepare('UPDATE workspace SET payload=?,version=version+1 WHERE id=? AND version=?').bind(JSON.stringify(data),'fiscaliza',row.version).run();if(result.meta.changes!==1)return respond({error:'Conflito de edição. Atualize a página e tente novamente.'},409);
+ if(!await updateWorkspace(JSON.stringify(data),row.version))return respond({error:'Conflito de edição. Atualize a página e tente novamente.'},409);
  return respond({...data,version:row.version+1,user});
  }catch(e){console.error(e);return respond({error:e instanceof Error?e.message:'Não foi possível salvar.'},400);}}
 

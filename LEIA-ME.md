@@ -64,13 +64,13 @@ Alterar uma regra ou um feriado não modifica retornos existentes. Cada vistoria
 
 ## Persistência e acesso
 
-O servidor utiliza SQLite/D1 com gravação atômica do estado e da auditoria. Controle de versão rejeita edições concorrentes para impedir perda silenciosa de alterações. Se aparecer conflito, copie os campos preenchidos, atualize a página e refaça a edição.
+O servidor utiliza SQLite/D1 no ambiente local e no ChatGPT Sites. Na Vercel, utiliza Upstash Redis por HTTPS; conecte essa integração ao projeto antes do primeiro uso. Ambos os modos fazem gravação atômica do estado e da auditoria. O controle de versão rejeita edições concorrentes para impedir perda silenciosa de alterações. Se aparecer conflito, copie os campos preenchidos, atualize a página e refaça a edição.
 
-No computador, o servidor fica em loopback e identifica as alterações como “Operador local”. Na versão hospedada, o acesso é privado ao proprietário pela plataforma Sites, e a identidade fornecida pela plataforma é registrada na auditoria. O nome do fiscal é um campo do cadastro, distinto da identidade do operador. Não há integração com SEI, SQL municipal ou login da Prefeitura.
+No computador, o servidor fica em loopback e identifica as alterações como “Operador local”. No ChatGPT Sites, o acesso é privado ao proprietário e a identidade fornecida pela plataforma é registrada na auditoria. Na Vercel, ative Deployment Protection para restringir o acesso; sem essa configuração, a URL é pública e as alterações aparecem como “Operador local”. O nome do fiscal é um campo do cadastro, distinto da identidade do operador. Não há integração com SEI, SQL municipal ou login da Prefeitura.
 
 Esta entrega é uma área de trabalho privada para uso individual/piloto. Não inclui administração de equipes, perfis de acesso por fiscal ou trilha de auditoria certificada. O armazenamento usa um documento versionado: volumes institucionais grandes exigem normalização em tabelas e paginação no servidor. Antes de uso institucional, a unidade deve validar os prazos e as condições de hospedagem e acesso.
 
-Os bancos local e hospedado são independentes. Faça backup local copiando `.wrangler/state` com o servidor parado. CSV é um relatório, não um backup completo. A auditoria pode ser exportada em JSON. Não há importação automática de backups pela interface.
+Os bancos local, do ChatGPT Sites e da Vercel são independentes. Faça backup local copiando `.wrangler/state` com o servidor parado. CSV é um relatório, não um backup completo. A auditoria pode ser exportada em JSON. Não há importação automática de backups pela interface.
 
 ## Verificação e estrutura
 

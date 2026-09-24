@@ -39,4 +39,12 @@ node tests/run.mjs
 node node_modules/typescript/bin/tsc --noEmit
 ```
 
-Tecnologias: React, TypeScript, Vinext/Vite, Radix/Shadcn, ExcelJS e Cloudflare D1.
+Tecnologias: React, TypeScript, Vinext/Vite, Radix/Shadcn, ExcelJS, Cloudflare D1 e Upstash Redis.
+
+## Implantar na Vercel
+
+O repositório já contém `vercel.json` e um build Vinext/Nitro compatível com a Vercel. Antes de usar a aplicação, conecte uma integração **Upstash Redis** ao projeto na Vercel; ela fornece automaticamente `UPSTASH_REDIS_REST_URL` e `UPSTASH_REDIS_REST_TOKEN`. Depois, faça um novo deploy.
+
+O site publicado pelo ChatGPT Sites continua usando Cloudflare D1. Os bancos das duas hospedagens são independentes.
+
+Para manter a implantação da Vercel restrita, ative **Deployment Protection** no projeto. Sem essa configuração, a URL da Vercel é pública.
