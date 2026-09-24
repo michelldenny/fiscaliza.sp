@@ -1,4 +1,6 @@
 import { env } from 'cloudflare:workers';
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import path from 'node:path';
 import { initialData } from './domain';
 import { firebaseConfigured,readFirebaseWorkspace,updateFirebaseWorkspace } from './firebase-store';
 
@@ -20,10 +22,46 @@ async function redisCommand<T>(command:unknown[]):Promise<T>{
  return body.result as T;
 }
 
+function hasD1(){
+ try {
+  return Boolean((env as {DB?:D1Database})?.DB);
+ } catch {
+  return false;
+ }
+}
+
 function d1(){
  const database=(env as {DB?:D1Database}).DB;
  if(!database)throw new Error('Banco de dados indisponível.');
  return database;
+}
+
+function localJsonPath(): string {
+ const dir = path.resolve('.sites-runtime');
+ if (!existsSync(dir)) {
+  try { mkdirSync(dir, { recursive: true }); } catch {}
+ }
+ return path.join(dir, 'workspace.json');
+}
+
+function readLocalJson(): WorkspaceRow {
+ const file = localJsonPath();
+ if (!existsSync(file)) {
+  const initial: WorkspaceRow = { payload: JSON.stringify(initialData()), version: 0 };
+  try { writeFileSync(file, JSON.stringify(initial, null, 2), 'utf8'); } catch {}
+  return initial;
+ }
+ const raw = readFileSync(file, 'utf8');
+ return JSON.parse(raw) as WorkspaceRow;
+}
+
+function updateLocalJson(payload: string, expectedVersion: number): boolean {
+ const file = localJsonPath();
+ const current = readLocalJson();
+ if (current.version !== expectedVersion) return false;
+ const next: WorkspaceRow = { payload, version: expectedVersion + 1 };
+ writeFileSync(file, JSON.stringify(next, null, 2), 'utf8');
+ return true;
 }
 
 export async function readWorkspace():Promise<WorkspaceRow>{
@@ -38,6 +76,9 @@ export async function readWorkspace():Promise<WorkspaceRow>{
   return row;
  }
  if(process.env.VERCEL)throw new Error('Banco de dados indisponível. Adicione FIREBASE_SERVICE_ACCOUNT_JSON às variáveis da Vercel e faça um novo deploy.');
+ if(!hasD1()){
+  return readLocalJson();
+ }
  const database=d1();
  await database.prepare('INSERT OR IGNORE INTO workspace (id,payload,version) VALUES (?,?,0)').bind('fiscaliza',JSON.stringify(initialData())).run();
  return (await database.prepare('SELECT payload,version FROM workspace WHERE id=?').bind('fiscaliza').first<WorkspaceRow>())!;
@@ -50,6 +91,10 @@ export async function updateWorkspace(payload:string,expectedVersion:number):Pro
   const next=JSON.stringify({payload,version:expectedVersion+1});
   return await redisCommand<number>(['EVAL',script,1,redisKey,expectedVersion,next])===1;
  }
+ if(!hasD1()){
+  return updateLocalJson(payload, expectedVersion);
+ }
  const result=await d1().prepare('UPDATE workspace SET payload=?,version=version+1 WHERE id=? AND version=?').bind(payload,'fiscaliza',expectedVersion).run();
  return result.meta.changes===1;
 }
+

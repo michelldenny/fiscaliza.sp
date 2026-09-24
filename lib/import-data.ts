@@ -15,7 +15,7 @@ export function validateImport(rows:ImportRow[],data:Pick<Data,'rules'|'actions'
  const seen=new Set(data.actions.filter(a=>!a.deleted).map(a=>a.demand));
  return rows.map(({line,input})=>{
   const get=(k:ImportField)=>typeof input?.[k]==='string'?input[k].trim():'';
-  const errors:string[]=[];const posture=get('posture');const rule=data.rules.find(r=>normalize(r.name)===normalize(posture)||r.id===posture);
+  const errors:string[]=[];const posture=get('posture');const rule=data.rules.find(r=>normalize(r.name)===normalize(posture)||(r.subtopic&&normalize(r.subtopic)===normalize(posture))||(r.subtopic&&normalize(`${r.name} ${r.subtopic}`)===normalize(posture))||(r.subtopic&&normalize(`${r.name} - ${r.subtopic}`)===normalize(posture))||r.id===posture);
   if(!rule||!rule.active||!rule.configured)errors.push('Postura não encontrada, inativa ou com prazo não validado.');
   const demand=get('demand'),address=get('address'),inspector=get('inspector'),date=parseDate(get('date'));
   if(!demand)errors.push('Nº da demanda obrigatório.');if(!address)errors.push('Endereço obrigatório.');if(!inspector)errors.push('Fiscal obrigatório.');if(!date||date>today())errors.push('Data da vistoria inválida ou futura (use DD/MM/AAAA).');

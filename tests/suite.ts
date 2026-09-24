@@ -8,7 +8,7 @@ import { GET,POST } from '../app/api/workspace/route';
 import { dueDate,initialData,situation,today,addDays,validDate } from '../lib/domain';
 let passed=0;
 function ok(test:boolean,message:string){assert.ok(test,message);passed++;console.log('OK',message);}
-const base=initialData().rules[0];
+const base=initialData().rules.find(r=>!r.configured)!;
 ok(dueDate('2026-09-25',{...base,days:1,mode:'uteis'})==='2026-09-28','Dia útil após sexta-feira');
 ok(dueDate('2026-09-25',{...base,days:1,mode:'uteis'},['2026-09-28'])==='2026-09-29','Feriado excluído da contagem');
 ok(dueDate('2026-12-31',{...base,days:1})==='2027-01-01','Virada de ano em dias corridos');
