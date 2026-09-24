@@ -3,6 +3,7 @@ import ExcelJS from 'exceljs';
 import { parseCSV,parseDate,autoMapping,cellText,rowHasContent,validateImport,MAX_IMPORT } from '../lib/import-data';
 import { readSpreadsheet } from '../lib/read-spreadsheet';
 import { readWorkspace,updateWorkspace } from '../lib/workspace-store';
+import { firebaseConfigured } from '../lib/firebase-store';
 import { GET,POST } from '../app/api/workspace/route';
 import { dueDate,initialData,situation,today,addDays,validDate } from '../lib/domain';
 let passed=0;
@@ -72,4 +73,6 @@ globalThis.fetch=async(_input,init)=>{const command=JSON.parse(String(init?.body
 const redisRow=await readWorkspace();const redisUpdated=await updateWorkspace(redisRow.payload,redisRow.version);
 ok(redisRow.version===0&&redisUpdated&&JSON.parse(redisValue).version===1&&redisCommands.some(c=>c[0]==='EVAL'),'Persistência Redis usa inicialização e atualização atômicas');
 globalThis.fetch=originalFetch;delete process.env.UPSTASH_REDIS_REST_URL;delete process.env.UPSTASH_REDIS_REST_TOKEN;
+process.env.FIREBASE_SERVICE_ACCOUNT_JSON=JSON.stringify({project_id:'fiscaliza-sp-24d1b',client_email:'firebase-adminsdk@example.test',private_key:'-----BEGIN PRIVATE KEY-----\\nteste\\n-----END PRIVATE KEY-----\\n'});
+ok(firebaseConfigured(),'Credencial de serviço do Firebase é reconhecida sem expor a chave no código');delete process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
 console.log(`\n${passed} verificações passaram.`);

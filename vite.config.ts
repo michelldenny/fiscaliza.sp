@@ -1,5 +1,5 @@
 import vinext from "vinext";
-import { defineConfig } from "vite";
+import { defineConfig, type UserConfig } from "vite";
 import { resolve } from "node:path";
 import hostingConfig from "./.openai/hosting.json";
 import { readExecutionProfile } from "./scripts/execution-profile.mjs";
@@ -48,7 +48,7 @@ export default defineConfig(async () => {
         },
       },
       plugins: [tailwindcss(), vinext(), nitro({ preset: "vercel" })],
-    };
+    } as UserConfig;
   }
 
   // Use Miniflare's local Request.cf placeholder unless fetching is requested.
@@ -66,6 +66,12 @@ export default defineConfig(async () => {
   const { cloudflare } = await import("@cloudflare/vite-plugin");
 
   return {
+    resolve: {
+      alias: {
+        "firebase-admin/app": resolve("build/firebase-admin-stub.ts"),
+        "firebase-admin/firestore": resolve("build/firebase-admin-stub.ts"),
+      },
+    },
     server: {
       ...(managedLinux ? { host: "0.0.0.0", allowedHosts: ["terminal.local"] } : {}),
       ...(isCodexSeatbeltSandbox ? { watch: { useFsEvents: false, usePolling: true } } : {}),
@@ -79,5 +85,5 @@ export default defineConfig(async () => {
         config: localBindingConfig,
       }),
     ],
-  };
+  } as UserConfig;
 });

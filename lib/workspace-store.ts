@@ -1,5 +1,6 @@
 import { env } from 'cloudflare:workers';
 import { initialData } from './domain';
+import { firebaseConfigured,readFirebaseWorkspace,updateFirebaseWorkspace } from './firebase-store';
 
 export type WorkspaceRow={payload:string;version:number};
 const redisKey='fiscaliza:workspace';
@@ -26,6 +27,7 @@ function d1(){
 }
 
 export async function readWorkspace():Promise<WorkspaceRow>{
+ if(firebaseConfigured())return readFirebaseWorkspace();
  if(redisCredentials()){
   const initial:WorkspaceRow={payload:JSON.stringify(initialData()),version:0};
   await redisCommand<number>(['SETNX',redisKey,JSON.stringify(initial)]);
@@ -35,12 +37,14 @@ export async function readWorkspace():Promise<WorkspaceRow>{
   if(typeof row.payload!=='string'||!Number.isInteger(row.version))throw new Error('Os dados persistidos estão em formato inválido.');
   return row;
  }
+ if(process.env.VERCEL)throw new Error('Banco de dados indisponível. Adicione FIREBASE_SERVICE_ACCOUNT_JSON às variáveis da Vercel e faça um novo deploy.');
  const database=d1();
  await database.prepare('INSERT OR IGNORE INTO workspace (id,payload,version) VALUES (?,?,0)').bind('fiscaliza',JSON.stringify(initialData())).run();
  return (await database.prepare('SELECT payload,version FROM workspace WHERE id=?').bind('fiscaliza').first<WorkspaceRow>())!;
 }
 
 export async function updateWorkspace(payload:string,expectedVersion:number):Promise<boolean>{
+ if(firebaseConfigured())return updateFirebaseWorkspace(payload,expectedVersion);
  if(redisCredentials()){
   const script="local current=redis.call('GET',KEYS[1]); if not current then return 0 end; local row=cjson.decode(current); if tonumber(row.version)~=tonumber(ARGV[1]) then return 0 end; redis.call('SET',KEYS[1],ARGV[2]); return 1";
   const next=JSON.stringify({payload,version:expectedVersion+1});

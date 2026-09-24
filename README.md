@@ -39,11 +39,13 @@ node tests/run.mjs
 node node_modules/typescript/bin/tsc --noEmit
 ```
 
-Tecnologias: React, TypeScript, Vinext/Vite, Radix/Shadcn, ExcelJS, Cloudflare D1 e Upstash Redis.
+Tecnologias: React, TypeScript, Vinext/Vite, Radix/Shadcn, ExcelJS, Cloudflare D1 e Cloud Firestore.
 
 ## Implantar na Vercel
 
-O repositório já contém `vercel.json` e um build Vinext/Nitro compatível com a Vercel. Antes de usar a aplicação, conecte uma integração **Upstash Redis** ao projeto na Vercel; ela fornece automaticamente `UPSTASH_REDIS_REST_URL` e `UPSTASH_REDIS_REST_TOKEN`. Depois, faça um novo deploy.
+O repositório já contém `vercel.json` e um build Vinext/Nitro compatível com a Vercel. A configuração pública do projeto Firebase `fiscaliza-sp-24d1b` já está incluída.
+
+Para autorizar o servidor a gravar no Cloud Firestore, ative o Firestore no console do Firebase e gere uma chave em **Configurações do projeto → Contas de serviço → Gerar nova chave privada**. Na Vercel, crie a variável protegida `FIREBASE_SERVICE_ACCOUNT_JSON` com o conteúdo completo desse arquivo JSON e faça um novo deploy. Não envie nem grave esse arquivo no GitHub.
 
 O site publicado pelo ChatGPT Sites continua usando Cloudflare D1. Os bancos das duas hospedagens são independentes.
 

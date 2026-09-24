@@ -64,7 +64,7 @@ Alterar uma regra ou um feriado não modifica retornos existentes. Cada vistoria
 
 ## Persistência e acesso
 
-O servidor utiliza SQLite/D1 no ambiente local e no ChatGPT Sites. Na Vercel, utiliza Upstash Redis por HTTPS; conecte essa integração ao projeto antes do primeiro uso. Ambos os modos fazem gravação atômica do estado e da auditoria. O controle de versão rejeita edições concorrentes para impedir perda silenciosa de alterações. Se aparecer conflito, copie os campos preenchidos, atualize a página e refaça a edição.
+O servidor utiliza SQLite/D1 no ambiente local e no ChatGPT Sites. Na Vercel, utiliza o Cloud Firestore do projeto `fiscaliza-sp-24d1b`. Configure `FIREBASE_SERVICE_ACCOUNT_JSON` como variável protegida na Vercel antes do primeiro uso. Ambos os modos fazem gravação atômica do estado e da auditoria. O controle de versão rejeita edições concorrentes para impedir perda silenciosa de alterações. Se aparecer conflito, copie os campos preenchidos, atualize a página e refaça a edição.
 
 No computador, o servidor fica em loopback e identifica as alterações como “Operador local”. No ChatGPT Sites, o acesso é privado ao proprietário e a identidade fornecida pela plataforma é registrada na auditoria. Na Vercel, ative Deployment Protection para restringir o acesso; sem essa configuração, a URL é pública e as alterações aparecem como “Operador local”. O nome do fiscal é um campo do cadastro, distinto da identidade do operador. Não há integração com SEI, SQL municipal ou login da Prefeitura.
 
