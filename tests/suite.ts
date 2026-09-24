@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import ExcelJS from 'exceljs';
-import { parseCSV,parseDate,autoMapping,validateImport,MAX_IMPORT } from '../lib/import-data';
+import { parseCSV,parseDate,autoMapping,cellText,rowHasContent,validateImport,MAX_IMPORT } from '../lib/import-data';
 import { readSpreadsheet } from '../lib/read-spreadsheet';
 import { GET,POST } from '../app/api/workspace/route';
 import { dueDate,initialData,situation,today,addDays,validDate } from '../lib/domain';
@@ -45,6 +45,8 @@ ok(csv.length===2&&csv[1][0]==='001'&&csv[1][1]==='Rua A; 20'&&csv[1][2]==='Prim
 ok(parseCSV('a,b\n1,2')[1][1]==='2'&&parseCSV('a\tb\n1\t2')[1][1]==='2','CSV aceita vírgula e tabulação');
 ok(parseDate('5/9/2026')==='2026-09-05'&&!parseDate('31/02/2026'),'Datas brasileiras validadas');
 ok(autoMapping(['Nº da demanda','Endereço','Data da última vistoria']).date===2,'Mapeamento reconhece cabeçalhos em português');
+ok(autoMapping([123,'Endereço']).address===1&&cellText(123)==='123'&&cellText(null)==='','Células não textuais são normalizadas com segurança');
+ok(rowHasContent([null,' ',0,false])&&!rowHasContent([null,'   ',undefined]),'Filtro de linhas aceita números e valores lógicos sem erro');
 await post('rule',{...base,active:true});
 const input={posture:base.name,demand:'IMPORT-001',address:'Endereço importado',date:today(),inspector:'Fiscal importação',sql:'0001',sei:'00002',priority:'',status:'',notes:'Observação importada'};
 const importBefore=state.actions.length;

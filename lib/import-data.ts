@@ -5,9 +5,11 @@ export type ImportField=typeof importFields[number][0];
 export type ImportInput=Record<ImportField,string>;
 export type ImportRow={line:number;input:ImportInput};
 export type ImportResult={line:number;input:ImportInput;errors:string[];payload:{postureId:string;demand:string;address:string;date:string;inspector:string;sql:string;sei:string;priority:string;status:string;notes:string}};
-export const normalize=(s:string)=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+export const cellText=(value:unknown)=>value==null?'':String(value);
+export const rowHasContent=(cells:readonly unknown[])=>cells.some(cell=>cellText(cell).trim().length>0);
+export const normalize=(value:unknown)=>cellText(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
 const aliases:Record<ImportField,string[]>={posture:['postura','tipo de postura'],demand:['demanda','numero demanda','n demanda','nº demanda','nº da demanda','numero da demanda'],address:['endereco','logradouro'],date:['data','data vistoria','ultima vistoria','data ultima vistoria','data da ultima vistoria'],inspector:['fiscal','fiscal responsavel','responsavel'],sql:['sql','setor quadra lote'],sei:['sei','processo','processo sei','nº do processo sei','numero processo sei'],priority:['prioridade','nivel de prioridade'],status:['status','status da acao','situacao da acao'],notes:['obs','observacoes','observacao']};
-export function autoMapping(headers:string[]){return Object.fromEntries(importFields.map(([key])=>[key,headers.findIndex(h=>aliases[key].some(alias=>normalize(alias)===normalize(h)))])) as Record<ImportField,number>;}
+export function autoMapping(headers:readonly unknown[]){return Object.fromEntries(importFields.map(([key])=>[key,headers.findIndex(h=>aliases[key].some(alias=>normalize(alias)===normalize(h)))])) as Record<ImportField,number>;}
 export function parseDate(value:string){const s=value.trim();if(validDate(s))return s;const m=/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s);if(m){const date=`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;return validDate(date)?date:'';}return '';}
 export function validateImport(rows:ImportRow[],data:Pick<Data,'rules'|'actions'>):ImportResult[]{
  const seen=new Set(data.actions.filter(a=>!a.deleted).map(a=>a.demand));

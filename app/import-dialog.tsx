@@ -4,17 +4,17 @@ import { Upload,FileSpreadsheet,ArrowDownToLine,CheckCircle2,AlertCircle } from 
 import { Dialog,DialogContent,DialogHeader,DialogTitle,DialogDescription } from '@/components/ui/dialog';
 import { Select,SelectTrigger,SelectValue,SelectContent,SelectItem } from '@/components/ui/select';
 import { Table,TableBody,TableCell,TableHead,TableHeader,TableRow } from '@/components/ui/table';
-import { importFields,autoMapping,validateImport,MAX_IMPORT,type ImportField,type ImportInput,type ImportRow } from '@/lib/import-data';
+import { importFields,autoMapping,cellText,rowHasContent,validateImport,MAX_IMPORT,type ImportField,type ImportInput,type ImportRow } from '@/lib/import-data';
 import { readSpreadsheet,type SheetData } from '@/lib/read-spreadsheet';
 import { dueDate,formatDate,today,type Data } from '@/lib/domain';
 type Props={data:Data;busy:boolean;onClose:()=>void;onImport:(rows:ImportRow[],source:string)=>Promise<boolean>};
 function saveCSV(name:string,rows:string[][]){const body='\uFEFF'+rows.map(r=>r.map(v=>'"'+(/^[=+\-@\t\r]/.test(v)?"'":'')+v.replaceAll('"','""')+'"').join(';')).join('\r\n');const url=URL.createObjectURL(new Blob([body],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 export default function ImportDialog({data,busy,onClose,onImport}:Props){
  const [sheets,setSheets]=useState<SheetData[]>([]),[sheetIndex,setSheetIndex]=useState('0'),[filename,setFilename]=useState(''),[loading,setLoading]=useState(false),[error,setError]=useState(''),[mapping,setMapping]=useState<Record<ImportField,number>>(autoMapping([])),[defaults,setDefaults]=useState({posture:'',inspector:'',date:''}),[step,setStep]=useState<'map'|'preview'>('map');
- const sheet=sheets[Number(sheetIndex)],headers=sheet?.rows[0]||[];
+ const sheet=sheets[Number(sheetIndex)],headers=(sheet?.rows[0]||[]).map(cellText);
  function chooseSheet(index:string,list=sheets){setSheetIndex(index);setMapping(autoMapping(list[Number(index)]?.rows[0]||[]));setStep('map');setError('');}
  async function selectFile(e:ChangeEvent<HTMLInputElement>){const file=e.target.files?.[0];if(!file)return;setLoading(true);setError('');setSheets([]);setFilename(file.name);setStep('map');try{const results=await readSpreadsheet(file);if(!results.length||results.every(s=>!s.rows.length))throw Error('A planilha está vazia.');setSheets(results);chooseSheet('0',results);}catch(e){setError(e instanceof Error?e.message:'Não foi possível ler o arquivo.');}finally{setLoading(false);}}
- const rows:ImportRow[]=(sheet?.rows.slice(1)||[]).map((cells,i)=>({line:i+2,input:Object.fromEntries(importFields.map(([key])=>[key,mapping[key]>=0?cells[mapping[key]]||'':''])) as ImportInput})).filter((r,i)=>sheet!.rows[i+1].some(cell=>cell.trim())).map(r=>({...r,input:{...r.input,posture:r.input.posture.trim()||defaults.posture,inspector:r.input.inspector.trim()||defaults.inspector,date:r.input.date.trim()||defaults.date}}));
+ const rows:ImportRow[]=(sheet?.rows.slice(1)||[]).map((cells,i)=>({line:i+2,input:Object.fromEntries(importFields.map(([key])=>[key,mapping[key]>=0?cellText(cells[mapping[key]]):''])) as ImportInput})).filter((_,i)=>rowHasContent(sheet?.rows[i+1]||[])).map(r=>({...r,input:{...r.input,posture:r.input.posture.trim()||defaults.posture,inspector:r.input.inspector.trim()||defaults.inspector,date:r.input.date.trim()||defaults.date}}));
  const results=validateImport(rows,data),valid=results.filter(r=>!r.errors.length),invalid=results.filter(r=>r.errors.length);
  const ready=rows.length>0&&rows.length<=MAX_IMPORT;
  async function confirm(){setError('');const ok=await onImport(valid.map(r=>({line:r.line,input:r.input})),filename+' · '+sheet.name);if(ok)onClose();else setError('A importação não foi salva. Confira o aviso e tente novamente. Os dados da prévia foram preservados.');}
