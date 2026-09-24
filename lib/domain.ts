@@ -81,6 +81,15 @@ export function ruleFullName(r: { name: string; subtopic?: string }) {
   return r.subtopic ? `${r.name} — ${r.subtopic}` : r.name;
 }
 
+export function formatSQL(val: string): string {
+  const digits = val.replace(/\D/g, '').slice(0, 11);
+  if (!digits) return '';
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+  if (digits.length <= 10) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 10)}-${digits.slice(10, 11)}`;
+}
+
 export function initialData(): Data {
   const rules: Rule[] = [
     ...defaultObraIrregularSubtopics.map((subtopic, i) => ({

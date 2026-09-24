@@ -5,9 +5,13 @@ import { readSpreadsheet } from '../lib/read-spreadsheet';
 import { readWorkspace,updateWorkspace } from '../lib/workspace-store';
 import { firebaseConfigured } from '../lib/firebase-store';
 import { GET,POST } from '../app/api/workspace/route';
-import { dueDate,initialData,situation,today,addDays,validDate } from '../lib/domain';
+import { dueDate,initialData,situation,today,addDays,validDate,formatSQL } from '../lib/domain';
 let passed=0;
 function ok(test:boolean,message:string){assert.ok(test,message);passed++;console.log('OK',message);}
+ok(formatSQL('12345678901')==='123.456.7890-1','Formatação de SQL completo');
+ok(formatSQL('123.456.7890-1')==='123.456.7890-1','Formatação de SQL já pontuado');
+ok(formatSQL('123456')==='123.456','Formatação de SQL parcial');
+ok(formatSQL('abc1234def')==='123.4','Filtro de caracteres não numéricos no SQL');
 const base=initialData().rules.find(r=>!r.configured)!;
 ok(dueDate('2026-09-25',{...base,days:1,mode:'uteis'})==='2026-09-28','Dia útil após sexta-feira');
 ok(dueDate('2026-09-25',{...base,days:1,mode:'uteis'},['2026-09-28'])==='2026-09-29','Feriado excluído da contagem');
