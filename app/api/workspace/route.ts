@@ -77,6 +77,7 @@ export async function POST(req:Request){try{
  }else if(body.op==='delete'){const a=findAction();a.deleted=true;after={deleted:true};type='Demanda excluída';
  }else if(body.op==='holidays'){check(Array.isArray(p.dates)&&p.dates.length<=1000&&p.dates.every((d:unknown)=>typeof d==='string'&&validDate(d)),'Informe datas válidas para os feriados.');before=data.holidays;data.holidays=[...new Set<string>(p.dates)].sort();after=data.holidays;type='Calendário de feriados alterado';
  }else if(body.op==='read'){check(Array.isArray(p.keys)&&p.keys.length<=10000&&p.keys.every((x:unknown)=>typeof x==='string'&&x.length<300),'Notificação inválida.');data.read[user]=[...new Set([...(data.read[user]||[]),...p.keys])];
+ }else if(body.op==='deleteRule'){const idx=data.rules.findIndex(r=>r.id===p.id);check(idx!==-1,'Postura não encontrada.');before={...data.rules[idx]};data.rules.splice(idx,1);entity=p.id;after=null;type='Postura excluída';
  }else return respond({error:'Operação desconhecida.'},400);
  if(type)data.audit.unshift({id:crypto.randomUUID(),at,actor,entity,type,before,after:structuredClone(after)});
  if(body.op==='import')check(new TextEncoder().encode(JSON.stringify(data)).length<1900000,'Este lote excede a capacidade atual da área de trabalho. Nenhuma linha foi salva.');
